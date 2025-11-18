@@ -1,5 +1,5 @@
 import { EventCard } from "@/components/event-card";
-import { FilterModal } from "@/components/filter-modal";
+import { FilterModal } from "@/components/modal/filter-modal";
 import { SearchBar } from "@/components/search-bar";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -127,7 +127,7 @@ export default function EventScreen() {
                 <ThemedText
                   style={[
                     styles.typeButtonText,
-                    activeType === type && { color: "#fff", fontWeight: "600" },
+                    activeType === type && { color: textColor, fontWeight: "600" },
                     activeType !== type && { color: textColor },
                   ]}
                 >
@@ -143,7 +143,7 @@ export default function EventScreen() {
             ) : filteredEvents.length > 0 ? (
               filteredEvents.slice(0, 6).map((event) => (
                 <View style={styles.gridItem} key={event.id}>
-                  <EventCard event={event} />
+                  <EventCard event={event}  onPress={() => router.push(`/event/${event.id}`)} />
                 </View>
               ))
             ) : (

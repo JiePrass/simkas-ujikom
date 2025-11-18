@@ -14,9 +14,10 @@ interface EventCardProps {
         flyerUrl: string;
         description: string;
     };
+    onPress?: () => void;  // ⬅ tambahan
 }
 
-export const EventCard = ({ event }: EventCardProps) => {
+export const EventCard = ({ event, onPress }: EventCardProps) => {
     const formattedDate = new Date(event.date).toLocaleDateString("id-ID", {
         day: "2-digit",
         month: "long",
@@ -27,7 +28,7 @@ export const EventCard = ({ event }: EventCardProps) => {
         event.price === 0 ? "Gratis" : `Rp ${event.price.toLocaleString("id-ID")}`;
 
     return (
-        <TouchableOpacity style={styles.card} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
 
             <ImageBackground
                 source={{ uri: event.flyerUrl }}
@@ -88,7 +89,7 @@ export const EventCard = ({ event }: EventCardProps) => {
 const styles = StyleSheet.create({
     card: {
         width: "100%",
-        aspectRatio: 1,        // ✅ memastikan persegi
+        aspectRatio: 1,
         borderRadius: 18,
         overflow: "hidden",
         marginBottom: 16,

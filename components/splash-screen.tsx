@@ -9,13 +9,31 @@ export default function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
     const isDark = colorScheme === "dark";
 
     useEffect(() => {
+        let mounted = true;
+
+        // Fade-in
         Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 1000,
             useNativeDriver: true,
             easing: Easing.ease,
-        }).start(() => { setTimeout(onFinish, 1000); });
-    }, [fadeAnim, onFinish]);
+        }).start(() => {
+            // Delay 1 detik lalu fade-out
+            Animated.timing(fadeOutAnim, {
+                toValue: 0,
+                duration: 600,
+                useNativeDriver: true,
+            }).start(() => {
+                if (mounted) {
+                    onFinish();
+                }
+            });
+        });
+
+        return () => {
+            mounted = false; // mencegah callback animasi jalan setelah unmount
+        };
+    }, [fadeAnim, fadeOutAnim, onFinish]);
 
     const logoSource = isDark
         ? require("@/assets/icons/jp-white.png")

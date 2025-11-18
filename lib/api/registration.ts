@@ -1,15 +1,18 @@
 // lib/api/registration.ts
+import { Platform } from "react-native";
 import axiosInstance from "./axiosInstance";
 
-export async function registerForEvent(eventId: number, paymentProof?: File) {
-    const formData = new FormData();
-    if (paymentProof) {
-        formData.append("paymentProof", paymentProof);
-    }
+export async function registerForEvent(eventId: number, formData: FormData) {
+    const headers =
+        Platform.OS === "web"
+            ? {} // web boleh auto-handle
+            : { Accept: "application/json" }; // RN: jangan isi Content-Type
 
-    const res = await axiosInstance.post(`/registration/${eventId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await axiosInstance.post(
+        `/registration/${eventId}`,
+        formData,
+        { headers }
+    );
 
     return res.data;
 }
@@ -33,7 +36,7 @@ export async function exportRegistrationCSV(eventId: number) {
     const res = await axiosInstance.get(`/registration/${eventId}/export`, {
         responseType: "blob",
     });
-    return res.data; 
+    return res.data;
 }
 
 export async function downloadEventQR(eventId: number) {

@@ -51,7 +51,7 @@ export function SearchBar({
                     style={[styles.filterButton, { backgroundColor: primaryColor }]}
                     activeOpacity={0.7}
                 >
-                    <SlidersHorizontal size={20} color="#fff" />
+                    <SlidersHorizontal size={20} color={textColor} />
                 </TouchableOpacity>
             )}
         </View>

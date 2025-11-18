@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { addGalleryComment, toggleLikeGallery } from "@/lib/api/gallery";
 import { Gallery, GalleryComment, GalleryMedia } from "@/lib/types/model";
-import { CommentModal } from "./comment-modal";
+import { CommentModal } from "./modal/comment-modal";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -143,15 +143,22 @@ export function GalleryDetail({ gallery }: Props) {
         }
     };
 
-    const submitComment = async () => {
+    const submitComment = async (parentId?: number | null) => {
         if (!newComment.trim()) return;
 
         try {
-            const created = await addGalleryComment(gallery.id, { content: newComment });
+            const created = await addGalleryComment(gallery.id, {
+                content: newComment,
+                parentId: parentId ?? null,
+            });
+
             setComments((prev) => [created, ...prev]);
             setNewComment("");
-        } catch { }
+        } catch (err) {
+            console.log(err);
+        }
     };
+
 
     const renderMedia = ({ item }: { item: GalleryMedia }) => (
         <Pressable onPress={handleDoubleTap} style={[styles.mediaWrap, { backgroundColor: bg }]}>
@@ -302,7 +309,7 @@ export function GalleryDetail({ gallery }: Props) {
         </ThemedView>
     );
 }
-    
+
 /* Styles (hanya layout, tanpa warna) */
 const styles = StyleSheet.create({
     card: {

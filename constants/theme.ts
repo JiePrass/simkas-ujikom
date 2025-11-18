@@ -5,7 +5,6 @@ const tintColorDark = "#fff";
 
 export const Colors = {
   light: {
-    // Existing colors
     text: "#11181C",
     subText: "#687076",
     background: "#fefefe",
@@ -13,10 +12,11 @@ export const Colors = {
     icon: "#687076",
     tabIconDefault: "#687076",
     tabIconSelected: tintColorLight,
-    primary: "#C9D8FF",
-    secondary: "#a1b1da",
 
-    // Additional UI system colors
+    // Updated primary & secondary
+    primary: "#A9C7FF",
+    secondary: "#7FAAF5",
+
     border: "#CCCCCC",
     card: "#fafafa",
     placeholder: "#888888",
@@ -29,7 +29,6 @@ export const Colors = {
   },
 
   dark: {
-    // Existing colors
     text: "#ECEDEE",
     subText: "#A1A8AD",
     background: "#1e1e1e",
@@ -38,7 +37,6 @@ export const Colors = {
     tabIconDefault: "#9BA1A6",
     tabIconSelected: tintColorDark,
 
-    // Additional UI system colors
     border: "#333333",
     card: "#252525",
     placeholder: "#AAAAAA",
@@ -47,29 +45,33 @@ export const Colors = {
     success: "#6FCF97",
     warning: "#F2C94C",
     disabled: "#555555",
-    buttonTextPrimary: "#FFFFFF",
+
+    // Keep your existing dark palette
     primary: "#5EABD6",
     secondary: "#345366",
+
+    buttonTextPrimary: "#FFFFFF",
   },
 };
 
+// SF Pro font usage
 export const Fonts = Platform.select({
   ios: {
-    sans: "system-ui",
-    serif: "ui-serif",
-    rounded: "ui-rounded",
-    mono: "ui-monospace",
-  },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
+    sans: "SF Pro Text",
+    serif: "SF Pro Display",
+    rounded: "SF Pro Rounded",
+    mono: "SF Mono",
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    sans: "'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    serif: "'SF Pro Display', Georgia, 'Times New Roman', serif",
+    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, sans-serif",
+    mono: "'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+  },
+  default: {
+    sans: "SF Pro Text",
+    serif: "serif",
+    rounded: "sans-serif",
+    mono: "monospace",
   },
 });

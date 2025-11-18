@@ -13,7 +13,8 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.highfiveindonesia.SIMKAS"
     },
     "web": {
       "output": "static",
@@ -27,7 +28,7 @@
           "image": "./assets/icons/simkas-logo.png",
           "imageWidth": 100,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#fefefe",
           "dark": {
             "backgroundColor": "#000000"
           }
@@ -37,6 +38,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "26d2cd69-2e5e-4407-b772-c09ae9f8a5d6"
+      }
+    },
+    "owner": "jieprass"
   }
 }

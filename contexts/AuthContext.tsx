@@ -11,22 +11,21 @@ interface User {
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    login: (token: string, user: User) => Promise<void>;
+    login: (token: string, user?: User | null) => Promise<void>;
     logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
     user: null,
     token: null,
-    login: async () => { },
-    logout: async () => { },
+    login: async () => {},
+    logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
 
-    // load from storage
     useEffect(() => {
         (async () => {
             const storedToken = await AsyncStorage.getItem("token");
@@ -37,18 +36,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })();
     }, []);
 
-    const login = async (token: string, user: User) => {
+    const login = async (token: string, user?: User | null) => {
         await AsyncStorage.setItem("token", token);
-        await AsyncStorage.setItem("user", JSON.stringify(user));
-
         setToken(token);
-        setUser(user);
+
+        if (user) {
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+            setUser(user);
+        }
     };
 
     const logout = async () => {
         await AsyncStorage.removeItem("token");
         await AsyncStorage.removeItem("user");
-
         setToken(null);
         setUser(null);
     };

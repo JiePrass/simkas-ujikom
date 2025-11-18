@@ -1,140 +1,207 @@
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { ThemedTextInput } from "@/components/themed-text-input";
-import { registerUser } from "@/lib/api/auth";
-import { router } from "expo-router";
+import { ThemedView } from "@/components/themed-view";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { loginWithGoogle, registerUser } from "@/lib/api/auth";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+    Alert,
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function RegisterPage() {
-    const [loading, setLoading] = useState(false);
-    const [step, setStep] = useState(1);
+    const textColor = useThemeColor({}, "text");
+    const primaryColor = useThemeColor({}, "primary");
+    const borderColor = useThemeColor({}, "border");
+    const inputBackgroundColor = useThemeColor({}, "inputBackground");
+    const iconColor = useThemeColor({}, "icon");
+    const placeholderColor = useThemeColor({}, "placeholder");
+    const subTextColor = useThemeColor({}, "subText");
+
     const [form, setForm] = useState({
         fullName: "",
         email: "",
-        phone: "",
-        education: "",
-        address: "",
         password: "",
+        confirmPassword: "",
     });
 
-    const handleChange = (key: string, value: string) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    const updateForm = (key: string, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleNext = () => {
-        if (step === 1 && (!form.fullName || !form.email || !form.phone)) {
-            return Alert.alert("Error", "Lengkapi semua data terlebih dahulu.");
-        }
-        if (step === 2 && (!form.education || !form.address)) {
-            return Alert.alert("Error", "Lengkapi semua data terlebih dahulu.");
-        }
-        setStep(step + 1);
-    };
-
     const handleRegister = async () => {
-        if (!form.password)
-            return Alert.alert("Error", "Kata sandi wajib diisi.");
+        if (!form.fullName || !form.email || !form.password || !form.confirmPassword)
+            return Alert.alert("Error", "Isi semua field.");
+
+        if (form.password !== form.confirmPassword)
+            return Alert.alert("Error", "Konfirmasi kata sandi tidak cocok.");
+
         try {
             setLoading(true);
-            const res = await registerUser(form);
+
+            const res = await registerUser({
+                fullName: form.fullName,
+                email: form.email,
+                phone: "",
+                education: "",
+                address: "",
+                password: form.password,
+            });
+
             Alert.alert("Berhasil", res.message || "Akun berhasil dibuat.");
+
             router.push({
                 pathname: "/verify-email",
                 params: { email: form.email },
             });
-        } catch (err: any) {
-            Alert.alert("Gagal", err.response?.data?.error || "Terjadi kesalahan.");
+
+        } catch (error: any) {
+            Alert.alert(
+                "Gagal",
+                error?.response?.data?.error || "Terjadi kesalahan."
+            );
         } finally {
             setLoading(false);
         }
     };
 
+    const handleGoogleLogin = async () => {
+        try {
+            setGoogleLoading(true);
+
+            const res = await loginWithGoogle("GOOGLE_AUTH_CODE");
+
+            // Jika backend mendaftarkan user baru → cek verifikasi email
+            if (!res.user?.isVerified) {
+                return router.push({
+                    pathname: "/verify-email",
+                    params: { email: res.user.email },
+                });
+            }
+
+            // router.replace("/complete-profile");
+
+        } catch (error: any) {
+            Alert.alert(
+                "Google Login gagal",
+                error?.response?.data?.error || "Terjadi kesalahan"
+            );
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
     return (
         <ThemedView style={styles.container}>
-            <ThemedText type="title">
-                {step === 1 && "Data Diri"}
-                {step === 2 && "Informasi Tambahan"}
-                {step === 3 && "Keamanan Akun"}
-            </ThemedText>
-
-            {/* STEP 1 */}
-            {step === 1 && (
-                <View style={styles.formGroup}>
-                    <ThemedTextInput
-                        placeholder="Nama Lengkap"
-                        value={form.fullName}
-                        onChangeText={(v) => handleChange("fullName", v)}
-                    />
-                    <ThemedTextInput
-                        placeholder="Email"
-                        value={form.email}
-                        onChangeText={(v) => handleChange("email", v)}
-                    />
-                    <ThemedTextInput
-                        placeholder="Nomor Telepon"
-                        keyboardType="phone-pad"
-                        value={form.phone}
-                        onChangeText={(v) => handleChange("phone", v)}
-                    />
-                </View>
-            )}
-
-            {/* STEP 2 */}
-            {step === 2 && (
-                <View style={styles.formGroup}>
-                    <ThemedTextInput
-                        placeholder="Pendidikan Terakhir"
-                        value={form.education}
-                        onChangeText={(v) => handleChange("education", v)}
-                    />
-                    <ThemedTextInput
-                        placeholder="Alamat Lengkap"
-                        value={form.address}
-                        onChangeText={(v) => handleChange("address", v)}
-                    />
-                </View>
-            )}
-
-            {/* STEP 3 */}
-            {step === 3 && (
-                <View style={styles.formGroup}>
-                    <ThemedTextInput
-                        placeholder="Kata Sandi"
-                        secureTextEntry
-                        value={form.password}
-                        onChangeText={(v) => handleChange("password", v)}
-                    />
-                </View>
-            )}
-
-            {/* BUTTONS */}
-            <View style={styles.buttonGroup}>
-                {step > 1 && (
-                    <TouchableOpacity
-                        style={[styles.button, styles.backButton]}
-                        onPress={() => setStep(step - 1)}
-                    >
-                        <ThemedText style={styles.backText}>Kembali</ThemedText>
-                    </TouchableOpacity>
-                )}
-
-                {step < 3 ? (
-                    <TouchableOpacity style={styles.button} onPress={handleNext}>
-                        <ThemedText style={styles.buttonText}>Lanjut</ThemedText>
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity
-                        style={[styles.button, loading && { opacity: 0.6 }]}
-                        disabled={loading}
-                        onPress={handleRegister}
-                    >
-                        <ThemedText style={styles.buttonText}>
-                            {loading ? "Mendaftar..." : "Daftar"}
-                        </ThemedText>
-                    </TouchableOpacity>
-                )}
+            <View style={styles.headerBlock}>
+                <ThemedText type="title" style={[styles.centerText, { color: textColor }]}>
+                    Buat Akun Baru
+                </ThemedText>
+                <ThemedText style={[styles.subtitle, { color: subTextColor }]}>
+                    Daftar untuk melanjutkan.
+                </ThemedText>
             </View>
+
+            {/* FULL NAME */}
+            <View style={[styles.inputWrapper, { backgroundColor: inputBackgroundColor, borderColor }]}>
+                <ThemedTextInput
+                    placeholder="Nama Lengkap"
+                    value={form.fullName}
+                    onChangeText={(v) => updateForm("fullName", v)}
+                    placeholderTextColor={placeholderColor}
+                    style={[styles.inputField, { color: textColor }]}
+                />
+            </View>
+
+            {/* EMAIL */}
+            <View style={[styles.inputWrapper, { backgroundColor: inputBackgroundColor, borderColor }]}>
+                <ThemedTextInput
+                    placeholder="Email"
+                    value={form.email}
+                    onChangeText={(v) => updateForm("email", v)}
+                    autoCapitalize="none"
+                    placeholderTextColor={placeholderColor}
+                    style={[styles.inputField, { color: textColor }]}
+                />
+            </View>
+
+            {/* PASSWORD */}
+            <View style={[styles.inputWrapper, { backgroundColor: inputBackgroundColor, borderColor }]}>
+                <ThemedTextInput
+                    placeholder="Kata Sandi"
+                    value={form.password}
+                    onChangeText={(v) => updateForm("password", v)}
+                    secureTextEntry={!showPassword}
+                    placeholderTextColor={placeholderColor}
+                    style={[styles.inputField, { color: textColor }]}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                    <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color={iconColor} />
+                </TouchableOpacity>
+            </View>
+
+            {/* CONFIRM PASSWORD */}
+            <View style={[styles.inputWrapper, { backgroundColor: inputBackgroundColor, borderColor }]}>
+                <ThemedTextInput
+                    placeholder="Konfirmasi Kata Sandi"
+                    value={form.confirmPassword}
+                    onChangeText={(v) => updateForm("confirmPassword", v)}
+                    secureTextEntry={!showConfirmPassword}
+                    placeholderTextColor={placeholderColor}
+                    style={[styles.inputField, { color: textColor }]}
+                />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeButton}>
+                    <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={22} color={iconColor} />
+                </TouchableOpacity>
+            </View>
+
+            {/* REGISTER BUTTON */}
+            <TouchableOpacity
+                style={[styles.button, { backgroundColor: primaryColor }, loading && { opacity: 0.6 }]}
+                onPress={handleRegister}
+                disabled={loading}
+            >
+                <ThemedText style={[styles.buttonText, { color: "#fff" }]}>
+                    {loading ? "Memproses..." : "Daftar"}
+                </ThemedText>
+            </TouchableOpacity>
+
+            {/* OR */}
+            <View style={styles.orWrapper}>
+                <View style={[styles.line, { backgroundColor: borderColor }]} />
+                <ThemedText style={[styles.orText, { color: subTextColor }]}>atau</ThemedText>
+                <View style={[styles.line, { backgroundColor: borderColor }]} />
+            </View>
+
+            {/* GOOGLE LOGIN */}
+            <TouchableOpacity
+                style={[
+                    styles.googleButton,
+                    { borderColor: borderColor, backgroundColor: inputBackgroundColor },
+                    googleLoading && { opacity: 0.7 },
+                ]}
+                onPress={handleGoogleLogin}
+                disabled={googleLoading}
+            >
+                <Image source={require("@/assets/icons/google.png")} style={styles.googleIcon} />
+                <ThemedText style={[styles.googleText, { color: textColor }]}>
+                    {googleLoading ? "Menghubungkan..." : "Daftar dengan Google"}
+                </ThemedText>
+            </TouchableOpacity>
+
+            <Link href="/login" style={styles.link}>
+                <ThemedText>Sudah punya akun? </ThemedText> Masuk
+            </Link>
         </ThemedView>
     );
 }
@@ -143,30 +210,82 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
-        padding: 24,
-        gap: 16,
+        padding: 32,
+        gap: 24,
     },
-    formGroup: {
-        gap: 12,
+    headerBlock: {
+        alignItems: "center",
+        marginBottom: 12,
     },
-    buttonGroup: {
+    centerText: {
+        textAlign: "center",
+    },
+    subtitle: {
+        textAlign: "center",
+        marginTop: 4,
+        fontSize: 14,
+        opacity: 0.7,
+    },
+    inputWrapper: {
+        width: "100%",
         flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 12,
+        alignItems: "center",
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        height: 52,
+    },
+    inputField: {
+        flex: 1,
+        height: "100%",
+        fontSize: 16,
+    },
+    eyeButton: {
+        paddingLeft: 8,
+        paddingRight: 4,
     },
     button: {
-        backgroundColor: "#27AE60",
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
         alignItems: "center",
-        marginLeft: 8,
+        width: "100%",
     },
-    backButton: {
-        backgroundColor: "#ddd",
-        marginLeft: 0,
-        marginRight: 8,
+    buttonText: {
+        fontWeight: "600",
     },
-    buttonText: { color: "#fff", fontWeight: "600" },
-    backText: { color: "#333", fontWeight: "600" },
+    orWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: -10,
+    },
+    line: {
+        flex: 1,
+        height: 1,
+    },
+    orText: {
+        fontSize: 13,
+    },
+    googleButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        paddingVertical: 14,
+        borderRadius: 12,
+        width: "100%",
+    },
+    googleIcon: {
+        width: 20,
+        height: 20,
+        marginRight: 10,
+    },
+    googleText: {
+        fontWeight: "600",
+    },
+    link: {
+        textAlign: "center",
+        marginTop: 14,
+        color: "#3498DB",
+    },
 });
