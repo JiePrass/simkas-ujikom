@@ -1,40 +1,44 @@
-import { ThemedText } from "@/components/themed-text";
-
 import AttendModal from "@/components/modal/attend-modal";
-import UploadPaymentModal from "@/components/modal/upload-payment-modal";
+import { ThemedText } from "@/components/themed-text";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { getEventById } from "@/lib/api/event";
 import { checkUserRegistration, registerForEvent } from "@/lib/api/registration";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+
+import * as WebBrowser from "expo-web-browser";
+
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
-    useWindowDimensions,
-    View
+    View,
 } from "react-native";
-import RenderHTML from "react-native-render-html";
+import HTMLView from "react-native-htmlview";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EventDetail() {
     const { id } = useLocalSearchParams();
-    const { width } = useWindowDimensions();
+    const router = useRouter();
 
     const [event, setEvent] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isEventStarted, setIsEventStarted] = useState(false);
 
     const [registrationStatus, setRegistrationStatus] =
-        useState<"NONE" | "REGISTERED" | "PENDING" | "APPROVED">("NONE");
+        useState<"NONE" | "PENDING" | "APPROVED">("NONE");
 
     const textColor = useThemeColor({}, "text");
     const primaryColor = useThemeColor({}, "primary");
+    const backgroundColor = useThemeColor({}, "background");
+    const cardColor = useThemeColor({}, "card");
 
-    // Modal states
-    const [showUploadModal, setShowUploadModal] = useState(false);
     const [showAttendModal, setShowAttendModal] = useState(false);
 
     useEffect(() => {
@@ -43,30 +47,86 @@ export default function EventDetail() {
                 const data = await getEventById(Number(id));
                 setEvent(data);
 
-                const reg = await checkUserRegistration(Number(id));
-                if (reg?.status === "APPROVED") setRegistrationStatus("APPROVED");
-                else if (reg?.status) setRegistrationStatus("REGISTERED");
+                const res = await checkUserRegistration(Number(id));
+                const reg = res.isRegistered;
+
+                if (reg?.status === "APPROVED") {
+                    setRegistrationStatus("APPROVED");
+                } else if (reg?.status === "PENDING") {
+                    setRegistrationStatus("PENDING");
+                } else {
+                    setRegistrationStatus("NONE");
+                }
             } catch (err) {
-                console.log(err);
+                console.log("EventDetail init:", err);
             } finally {
                 setLoading(false);
             }
         })();
     }, [id]);
 
+    useEffect(() => {
+        if (!event) return;
+
+        const eventDateTime = new Date(`${event.date}T${event.time}:00`);
+        const now = new Date();
+        setIsEventStarted(now >= eventDateTime);
+    }, [event]);
+
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true;
+
+            (async () => {
+                const res = await checkUserRegistration(Number(id));
+                const reg = res.isRegistered;
+
+                if (!isActive) return;
+
+                if (reg?.status === "APPROVED") setRegistrationStatus("APPROVED");
+                else if (reg?.status === "PENDING") setRegistrationStatus("PENDING");
+                else setRegistrationStatus("NONE");
+            })();
+
+            return () => {
+                isActive = false;
+            };
+        }, [id])
+    );
+
+    const handleRegister = async () => {
+        try {
+            const res = await registerForEvent(event.id);
+
+            if (event.price === 0) {
+                alert("Pendaftaran berhasil!");
+                setRegistrationStatus("APPROVED");
+                return;
+            }
+
+            await WebBrowser.openBrowserAsync(res.redirectUrl);
+
+            alert("Silakan selesaikan pembayaran di halaman yang terbuka.");
+            setRegistrationStatus("PENDING");
+        } catch (err) {
+            console.log("Register error:", err);
+            alert("Gagal mendaftar. Silakan coba lagi.");
+        }
+    };
+
     if (loading) {
         return (
-            <View style={styles.center}>
+            <SafeAreaView style={styles.center}>
                 <ActivityIndicator size="large" />
-            </View>
+            </SafeAreaView>
         );
     }
 
     if (!event) {
         return (
-            <View style={styles.center}>
+            <SafeAreaView style={styles.center}>
                 <ThemedText>Event tidak ditemukan.</ThemedText>
-            </View>
+            </SafeAreaView>
         );
     }
 
@@ -76,28 +136,15 @@ export default function EventDetail() {
         year: "numeric",
     });
 
-    const handleRegister = async () => {
-        try {
-            if (event.price === 0) {
-                // FormData kosong
-                const formData = new FormData();
-
-                await registerForEvent(event.id, formData);
-
-                alert("Pendaftaran berhasil!");
-                setRegistrationStatus("APPROVED");
-
-            } else {
-                setShowUploadModal(true);
-            }
-        } catch (err) {
-            console.log(err);
-            alert("Gagal mendaftar. Silakan coba lagi.");
-        }
-    };
-
     return (
-        <>
+        <SafeAreaView style={{ flex: 1, backgroundColor }}>
+            <TouchableOpacity
+                style={[styles.backButton, { backgroundColor: cardColor + "CC" }]}
+                onPress={() => router.back()}
+            >
+                <Ionicons name="chevron-back" size={24} color={textColor} />
+            </TouchableOpacity>
+
             <ScrollView style={{ flex: 1 }}>
                 <Image source={{ uri: event.eventBannerUrl }} style={styles.banner} />
 
@@ -125,7 +172,6 @@ export default function EventDetail() {
                         </ThemedText>
                     </View>
 
-                    {/* ACTION BUTTON */}
                     {registrationStatus === "NONE" && (
                         <TouchableOpacity
                             style={[styles.primaryBtn, { backgroundColor: primaryColor }]}
@@ -138,51 +184,80 @@ export default function EventDetail() {
                     {registrationStatus === "PENDING" && (
                         <View style={styles.pendingBox}>
                             <ThemedText style={{ textAlign: "center" }}>
-                                Menunggu konfirmasi pembayaran
+                                Menunggu konfirmasi pembayaran...
                             </ThemedText>
                         </View>
                     )}
 
                     {registrationStatus === "APPROVED" && (
                         <TouchableOpacity
-                            style={[styles.primaryBtn, { backgroundColor: primaryColor }]}
-                            onPress={() => setShowAttendModal(true)}
+                            disabled={!isEventStarted}
+                            style={[
+                                styles.primaryBtn,
+                                {
+                                    backgroundColor: isEventStarted
+                                        ? primaryColor
+                                        : "#CCC",
+                                },
+                            ]}
+                            onPress={() => isEventStarted && setShowAttendModal(true)}
                         >
-                            <ThemedText style={styles.btnText}>Presensi</ThemedText>
+                            <ThemedText style={styles.btnText}>
+                                {isEventStarted ? "Presensi" : "Event Belum Dimulai"}
+                            </ThemedText>
                         </TouchableOpacity>
                     )}
 
                     <View style={{ marginTop: 20 }}>
-                        <RenderHTML
-                            contentWidth={width}
-                            baseStyle={{ color: textColor }}
-                            source={{ html: event.description }}
-                            tagsStyles={{
-                                h1: { fontSize: 26, fontWeight: "700", marginBottom: 12 },
-                                h2: { fontSize: 22, fontWeight: "600", marginBottom: 10 },
-                                p: { fontSize: 15, lineHeight: 22, marginBottom: 10 },
+                        <HTMLView
+                            value={event.description}
+                            stylesheet={{
+                                h1: {
+                                    fontSize: 26,
+                                    fontWeight: "700",
+                                    marginBottom: 12,
+                                    color: textColor,
+                                },
+                                h2: {
+                                    fontSize: 22,
+                                    fontWeight: "600",
+                                    marginBottom: 10,
+                                    color: textColor,
+                                },
+                                h3: {
+                                    fontSize: 18,
+                                    fontWeight: "600",
+                                    marginBottom: 8,
+                                    color: textColor,
+                                },
+                                p: {
+                                    fontSize: 15,
+                                    lineHeight: 22,
+                                    marginBottom: 10,
+                                    color: textColor,
+                                },
+                                ul: { marginBottom: 10, paddingLeft: 20 },
+                                ol: { marginBottom: 10, paddingLeft: 20 },
+                                li: {
+                                    fontSize: 15,
+                                    lineHeight: 22,
+                                    marginBottom: 6,
+                                    color: textColor,
+                                },
+                                span: { color: textColor },
                             }}
                         />
                     </View>
                 </View>
             </ScrollView>
 
-            {/* ==== UPLOAD PAYMENT MODAL ==== */}
-            <UploadPaymentModal
-                visible={showUploadModal}
-                onClose={() => setShowUploadModal(false)}
-                eventId={Number(id)}
-                onSuccess={() => setRegistrationStatus("REGISTERED")}
-            />
-
-            {/* ==== ATTEND MODAL ==== */}
             <AttendModal
                 visible={showAttendModal}
                 onClose={() => setShowAttendModal(false)}
                 eventId={Number(id)}
                 onSuccess={() => alert("Presensi berhasil")}
             />
-        </>
+        </SafeAreaView>
     );
 }
 
@@ -220,5 +295,17 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 10,
         marginTop: 10,
+    },
+    backButton: {
+        position: "absolute",
+        top: 44,
+        left: 16,
+        zIndex: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: "center",
+        alignItems: "center",
+        elevation: 4,
     },
 });

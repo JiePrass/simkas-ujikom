@@ -1,19 +1,8 @@
 // lib/api/registration.ts
-import { Platform } from "react-native";
 import axiosInstance from "./axiosInstance";
 
-export async function registerForEvent(eventId: number, formData: FormData) {
-    const headers =
-        Platform.OS === "web"
-            ? {} // web boleh auto-handle
-            : { Accept: "application/json" }; // RN: jangan isi Content-Type
-
-    const res = await axiosInstance.post(
-        `/registration/${eventId}`,
-        formData,
-        { headers }
-    );
-
+export async function registerForEvent(eventId: number) {
+    const res = await axiosInstance.post(`/registration/${eventId}`);
     return res.data;
 }
 

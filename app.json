@@ -7,7 +7,7 @@
     "icon": "./assets/icons/simkas-logo.png",
     "scheme": "simkas",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
