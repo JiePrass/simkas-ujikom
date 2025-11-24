@@ -14,7 +14,7 @@ interface EventCardProps {
         flyerUrl: string;
         description: string;
     };
-    onPress?: () => void;  // ⬅ tambahan
+    onPress?: () => void;
 }
 
 export const EventCard = ({ event, onPress }: EventCardProps) => {

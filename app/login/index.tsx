@@ -44,11 +44,14 @@ export default function LoginPage() {
             // 1. Login → dapat token
             const res = await loginUser({ email, password });
 
-            // 2. Simpan token dulu (tanpa user)
+            // 2. Simpan token dulu
             await login(res.token);
 
             // 3. Fetch data user dari /me
             const me = await getCurrentUser();
+
+            // 4. Simpan user ke AuthContext
+            await login(res.token, me);
 
             // 5. Cek apakah profil sudah lengkap
             const isIncomplete =
@@ -95,7 +98,7 @@ export default function LoginPage() {
                 <ThemedText style={styles.subtitle}>
                     Masuk untuk mengikuti event dan melanjutkan aktivitasmu
                 </ThemedText>
-            </View> 
+            </View>
 
             {/* EMAIL */}
             <View
