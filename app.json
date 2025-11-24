@@ -14,7 +14,8 @@
     "android": {
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.highfiveindonesia.SIMKAS"
+      "package": "com.highfiveindonesia.SIMKAS",
+      "newArchEnabled": true
     },
     "web": {
       "output": "static",
